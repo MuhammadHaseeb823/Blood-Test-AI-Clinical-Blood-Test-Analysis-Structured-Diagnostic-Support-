@@ -1,0 +1,2143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Blood Test AI — Clinical Reasoning System</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, Helvetica, sans-serif;
+    background: #f4f7fb;
+    color: #1f2937;
+}
+
+header {
+    background: #7f1d1d;
+    color: white;
+    padding: 22px;
+}
+
+.logo {
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.subtitle {
+    margin-top: 6px;
+    opacity: 0.9;
+}
+
+nav {
+    background: #991b1b;
+    padding: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+nav button {
+    background: white;
+    color: #7f1d1d;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+nav button:hover {
+    background: #fee2e2;
+}
+
+.container {
+    max-width: 1400px;
+    margin: auto;
+    padding: 25px;
+}
+
+.page {
+    display: none;
+}
+
+.page.active {
+    display: block;
+}
+
+.card {
+    background: white;
+    border-radius: 10px;
+    padding: 22px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+h1, h2, h3 {
+    color: #7f1d1d;
+}
+
+.warning {
+    background: #fff7ed;
+    border-left: 5px solid #ea580c;
+    padding: 15px;
+    margin: 15px 0;
+}
+
+.info {
+    background: #eff6ff;
+    border-left: 5px solid #2563eb;
+    padding: 15px;
+}
+
+.danger {
+    background: #fef2f2;
+    border-left: 5px solid #dc2626;
+    padding: 15px;
+}
+
+.success {
+    background: #f0fdf4;
+    border-left: 5px solid #16a34a;
+    padding: 15px;
+}
+
+.patient-grid,
+.lab-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 15px;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+}
+
+.field label {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.field small {
+    color: #6b7280;
+    margin-top: 4px;
+}
+
+input,
+select,
+textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 15px;
+}
+
+textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.section-title {
+    margin-top: 30px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+button.primary {
+    background: #7f1d1d;
+    color: white;
+    border: none;
+    padding: 13px 20px;
+    border-radius: 7px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+button.secondary {
+    background: #475569;
+    color: white;
+    border: none;
+    padding: 13px 20px;
+    border-radius: 7px;
+    cursor: pointer;
+}
+
+button.primary:hover {
+    background: #991b1b;
+}
+
+button.secondary:hover {
+    background: #334155;
+}
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+th,
+td {
+    border: 1px solid #d1d5db;
+    padding: 9px;
+    text-align: left;
+}
+
+th {
+    background: #f3f4f6;
+}
+
+.normal {
+    color: #15803d;
+    font-weight: bold;
+}
+
+.high {
+    color: #dc2626;
+    font-weight: bold;
+}
+
+.low {
+    color: #2563eb;
+    font-weight: bold;
+}
+
+.result-card {
+    border-left: 5px solid #7f1d1d;
+    margin-bottom: 15px;
+}
+
+.badge {
+    display: inline-block;
+    padding: 5px 9px;
+    border-radius: 15px;
+    font-size: 12px;
+    font-weight: bold;
+    background: #e5e7eb;
+}
+
+.badge.high {
+    background: #fee2e2;
+}
+
+.badge.low {
+    background: #dbeafe;
+}
+
+.badge.normal {
+    background: #dcfce7;
+}
+
+.reference {
+    color: #64748b;
+    font-size: 12px;
+}
+
+footer {
+    text-align: center;
+    padding: 30px;
+    color: #64748b;
+}
+
+@media print {
+    nav,
+    .actions,
+    .no-print {
+        display: none !important;
+    }
+
+    body {
+        background: white;
+    }
+
+    .card {
+        box-shadow: none;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <div class="logo">🩸 Blood Test AI</div>
+    <div class="subtitle">
+        Clinical Blood Test Analysis & Structured Diagnostic Support
+    </div>
+</header>
+
+<nav>
+    <button onclick="showPage('home')">Home</button>
+    <button onclick="showPage('input')">Start Analysis</button>
+    <button onclick="showPage('results')">Results</button>
+    <button onclick="showPage('explanations')">Clinical Explanations</button>
+    <button onclick="showPage('about')">About System</button>
+</nav>
+
+<div class="container">
+
+<!-- HOME -->
+
+<section id="home" class="page active">
+
+<div class="card">
+
+<h1>Blood Test AI</h1>
+
+<div class="warning">
+<strong>⚠️ Educational Disclaimer</strong><br><br>
+This application is strictly for educational and decision-support purposes.
+It must not be used as a substitute for professional medical advice,
+diagnosis or treatment.
+</div>
+
+<p>
+Blood Test AI uses a rule-based clinical reasoning engine to analyse
+laboratory parameters and identify patterns that may warrant further
+investigation.
+</p>
+
+<p>
+The system combines numerical laboratory findings with structured
+interpretation rules and blood-film morphology guidance.
+</p>
+
+<div class="actions">
+<button class="primary" onclick="showPage('input')">
+Start Analysis
+</button>
+
+<button class="secondary" onclick="showPage('about')">
+Learn About System
+</button>
+</div>
+
+</div>
+
+</section>
+
+
+<!-- INPUT -->
+
+<section id="input" class="page">
+
+<div class="card">
+
+<h2>Patient Information</h2>
+
+<div class="patient-grid">
+
+<div class="field">
+<label>Patient Name</label>
+<input id="patient_name">
+</div>
+
+<div class="field">
+<label>Patient ID</label>
+<input id="patient_id">
+</div>
+
+<div class="field">
+<label>Age</label>
+<input id="age" type="number" min="0" step="1">
+<small>years</small>
+</div>
+
+<div class="field">
+<label>Gender</label>
+<select id="gender">
+<option value="">Select</option>
+<option value="M">Male</option>
+<option value="F">Female</option>
+</select>
+</div>
+
+</div>
+
+</div>
+
+
+<div class="card">
+
+<h2>Complete Laboratory Parameters</h2>
+
+<p class="reference">
+Enter the patient's result. Units and typical reference ranges are
+provided for orientation only; local laboratory reference intervals
+should take precedence.
+</p>
+
+<div class="lab-grid">
+
+<!-- CBC -->
+
+<div class="field">
+<label>White Blood Cell (WBC)</label>
+<input id="wbc" type="number" step="0.01">
+<small>×10⁹/L | Typical adult: 4.0–11.0</small>
+</div>
+
+<div class="field">
+<label>Red Blood Cell (RBC)</label>
+<input id="rbc" type="number" step="0.01">
+<small>×10¹²/L | Typical: M 4.5–6.0, F 4.0–5.5</small>
+</div>
+
+<div class="field">
+<label>Haemoglobin (Hb)</label>
+<input id="hb" type="number" step="0.1">
+<small>g/dL | Typical: M 13–18, F 12–16</small>
+</div>
+
+<div class="field">
+<label>Haematocrit (HCT)</label>
+<input id="hct" type="number" step="0.001">
+<small>L/L | Typical: M 0.40–0.52, F 0.36–0.47</small>
+</div>
+
+<div class="field">
+<label>Mean Cell Volume (MCV)</label>
+<input id="mcv" type="number" step="0.1">
+<small>fL | Typical: 80–100</small>
+</div>
+
+<div class="field">
+<label>Mean Corpuscular Haemoglobin (MCH)</label>
+<input id="mch" type="number" step="0.1">
+<small>pg | Typical: 27–33</small>
+</div>
+
+<div class="field">
+<label>Mean Corpuscular Haemoglobin Concentration (MCHC)</label>
+<input id="mchc" type="number" step="0.1">
+<small>g/dL | Typical: 32–36</small>
+</div>
+
+<div class="field">
+<label>RDW-CV</label>
+<input id="rdw" type="number" step="0.1">
+<small>% | Typical: 11.5–14.5</small>
+</div>
+
+<div class="field">
+<label>Platelet (PLT)</label>
+<input id="plt" type="number" step="1">
+<small>×10⁹/L | Typical: 150–450</small>
+</div>
+
+<div class="field">
+<label>Mean Platelet Volume (MPV)</label>
+<input id="mpv" type="number" step="0.1">
+<small>fL | Typical: 7.5–12.5</small>
+</div>
+
+
+<!-- DIFFERENTIAL -->
+
+<div class="field">
+<label>Lymphocyte %</label>
+<input id="lymph_pct" type="number" step="0.1">
+<small>% | Typical: 20–40</small>
+</div>
+
+<div class="field">
+<label>Lymphocyte Absolute Number</label>
+<input id="lymph_abs" type="number" step="0.01">
+<small>×10⁹/L | Typical: 1.0–4.0</small>
+</div>
+
+<div class="field">
+<label>Monocyte %</label>
+<input id="mono_pct" type="number" step="0.1">
+<small>% | Typical: 2–10</small>
+</div>
+
+<div class="field">
+<label>Monocyte Absolute Number</label>
+<input id="mono_abs" type="number" step="0.01">
+<small>×10⁹/L | Typical: 0.2–0.8</small>
+</div>
+
+<div class="field">
+<label>Neutrophil %</label>
+<input id="neut_pct" type="number" step="0.1">
+<small>% | Typical: 40–75</small>
+</div>
+
+<div class="field">
+<label>Neutrophil Absolute Number</label>
+<input id="neut_abs" type="number" step="0.01">
+<small>×10⁹/L | Typical: 2.0–7.5</small>
+</div>
+
+<div class="field">
+<label>Eosinophil %</label>
+<input id="eos_pct" type="number" step="0.1">
+<small>% | Typical: 0–6</small>
+</div>
+
+<div class="field">
+<label>Eosinophil Absolute Number</label>
+<input id="eos_abs" type="number" step="0.01">
+<small>×10⁹/L | Typical: 0.0–0.5</small>
+</div>
+
+<div class="field">
+<label>Basophil %</label>
+<input id="baso_pct" type="number" step="0.1">
+<small>% | Typical: 0–2</small>
+</div>
+
+<div class="field">
+<label>Basophil Absolute Number</label>
+<input id="baso_abs" type="number" step="0.01">
+<small>×10⁹/L | Typical: 0.0–0.1</small>
+</div>
+
+
+<!-- BIOCHEMISTRY -->
+
+<div class="field">
+<label>Iron</label>
+<input id="iron" type="number" step="0.1">
+<small>µmol/L | Typical adult varies by laboratory</small>
+</div>
+
+<div class="field">
+<label>TIBC</label>
+<input id="tibc" type="number" step="0.1">
+<small>µmol/L | Typical adult varies by laboratory</small>
+</div>
+
+<div class="field">
+<label>Urea</label>
+<input id="urea" type="number" step="0.1">
+<small>mmol/L | Typical: 2.5–7.8</small>
+</div>
+
+<div class="field">
+<label>Creatinine</label>
+<input id="creatinine" type="number" step="0.1">
+<small>µmol/L | Typical: laboratory/sex dependent</small>
+</div>
+
+<div class="field">
+<label>Calcium</label>
+<input id="calcium" type="number" step="0.01">
+<small>mmol/L | Typical: 2.20–2.60</small>
+</div>
+
+<div class="field">
+<label>Uric Acid</label>
+<input id="uric_acid" type="number" step="0.1">
+<small>µmol/L | Typical: sex dependent</small>
+</div>
+
+<div class="field">
+<label>Bilirubin</label>
+<input id="bilirubin" type="number" step="0.1">
+<small>µmol/L | Typical: 3–21</small>
+</div>
+
+<div class="field">
+<label>ALP</label>
+<input id="alp" type="number" step="0.1">
+<small>U/L | Typical: adult laboratory dependent</small>
+</div>
+
+<div class="field">
+<label>Albumin</label>
+<input id="albumin" type="number" step="0.1">
+<small>g/L | Typical: 35–50</small>
+</div>
+
+<div class="field">
+<label>CRP</label>
+<input id="crp" type="number" step="0.1">
+<small>mg/L | Typical: &lt;5</small>
+</div>
+
+<div class="field">
+<label>LDH</label>
+<input id="ldh" type="number" step="0.1">
+<small>U/L | Laboratory dependent</small>
+</div>
+
+<div class="field">
+<label>ESR</label>
+<input id="esr" type="number" step="1">
+<small>mm/hr | Age/sex dependent</small>
+</div>
+
+<div class="field">
+<label>Ferritin</label>
+<input id="ferritin" type="number" step="0.1">
+<small>µg/L | Sex/age dependent</small>
+</div>
+
+<div class="field">
+<label>Folate</label>
+<input id="folate" type="number" step="0.1">
+<small>µg/L or nmol/L | Assay dependent</small>
+</div>
+
+<div class="field">
+<label>Vitamin B12</label>
+<input id="b12" type="number" step="1">
+<small>ng/L (pg/mL) | Typical deficiency concern &lt;200</small>
+</div>
+
+</div>
+
+
+<h2 class="section-title">
+Blood Film / Clinical Information
+</h2>
+
+<div class="field">
+<label>Morphology / Clinical Details</label>
+<textarea id="clinical_details"
+placeholder="Examples: microcytosis, hypochromia, target cells, spherocytes, schistocytes, blasts, toxic granulation, recent surgery, infection, chemotherapy, pregnancy, travel to malaria area, transfusion, etc."></textarea>
+</div>
+
+
+<div class="actions">
+
+<button class="primary" onclick="runAnalysis()">
+Run Blood Test Analysis
+</button>
+
+<button class="secondary" onclick="clearForm()">
+Clear Form
+</button>
+
+</div>
+
+</div>
+
+</section>
+
+
+<!-- RESULTS -->
+
+<section id="results" class="page">
+
+<div class="card">
+
+<h2>Analysis Results</h2>
+
+<div id="resultSummary">
+No analysis has been performed yet.
+</div>
+
+</div>
+
+<div class="card">
+
+<h2>Laboratory Results</h2>
+
+<div id="labResults"></div>
+
+</div>
+
+<div class="card">
+
+<h2>Clinical Findings & Suggestions</h2>
+
+<div id="diagnosisResults"></div>
+
+</div>
+
+<div class="card">
+
+<h2>Safety / Escalation Flags</h2>
+
+<div id="safetyResults"></div>
+
+</div>
+
+<div class="actions no-print">
+
+<button class="primary" onclick="downloadJSON()">
+Download Patient JSON
+</button>
+
+<button class="secondary" onclick="window.print()">
+Download / Print Report
+</button>
+
+</div>
+
+</section>
+
+
+<!-- EXPLANATIONS -->
+
+<section id="explanations" class="page">
+
+<div class="card">
+
+<h2>Clinical Explanations</h2>
+
+<p>
+The rules below are educational pattern-recognition rules derived from
+the supplied laboratory rule table and blood-film morphology SOP.
+</p>
+
+<div id="clinicalExplanationContent">
+
+<h3>Microcytosis</h3>
+<p>
+Microcytosis with anaemia, low MCH, hypochromia, pencil cells and target
+cells can be associated with iron deficiency. Ferritin and iron studies
+may be considered.
+</p>
+
+<h3>Macrocytosis</h3>
+<p>
+Macrocytosis may occur with B12/folate deficiency, liver disease,
+medication effects, alcohol-related disease, reticulocytosis or marrow
+disorders. Morphology and clinical information should be considered.
+</p>
+
+<h3>Thrombocytopenia</h3>
+<p>
+A platelet count below 150 ×10⁹/L meets the supplied rule definition for
+thrombocytopenia. Platelet clumping should be considered when the result
+is unexpectedly low.
+</p>
+
+<h3>Thrombocytosis</h3>
+<p>
+A platelet count above 450 ×10⁹/L meets the supplied rule definition for
+thrombocytosis. Reactive causes such as infection, inflammation and iron
+deficiency should be considered.
+</p>
+
+<h3>Neutropenia</h3>
+<p>
+The supplied morphology SOP highlights infection, medication effects,
+liver disease, viral illness, marrow disorders and other causes.
+Persistent or severe neutropenia may warrant professional review.
+</p>
+
+<h3>Neutrophilia</h3>
+<p>
+Neutrophilia with toxic changes can occur with infection or inflammation.
+A marked neutrophilia with myelocytes, eosinophilia or basophilia may
+require specialist investigation.
+</p>
+
+<h3>Possible haemolysis</h3>
+<p>
+Anaemia with increased bilirubin and appropriate morphology may suggest
+haemolysis. Reticulocyte count, DAT and clinical correlation may be
+required.
+</p>
+
+<h3>Malaria</h3>
+<p>
+Where malaria is clinically suspected, travel history and appropriate
+blood-film/parasitological testing are important. Positive or strongly
+suspected cases require urgent professional handling.
+</p>
+
+<h3>Important</h3>
+<p>
+The application does not establish a diagnosis. Laboratory results must
+be interpreted using the patient's clinical history, local laboratory
+reference intervals and appropriate confirmatory testing.
+</p>
+
+</div>
+
+</div>
+
+</section>
+
+
+<!-- ABOUT -->
+
+<section id="about" class="page">
+
+<div class="card">
+
+<h2>About Blood Test AI</h2>
+
+<p>
+Blood Test AI is a rule-based educational clinical reasoning interface.
+It accepts a broad set of haematology and biochemical parameters and
+applies structured rules to identify patterns.
+</p>
+
+<h3>Included laboratory groups</h3>
+
+<ul>
+<li>Full blood count</li>
+<li>Red-cell indices</li>
+<li>White-cell differential</li>
+<li>Platelet parameters</li>
+<li>Iron studies</li>
+<li>Renal markers</li>
+<li>Liver-related markers</li>
+<li>Inflammatory markers</li>
+<li>LDH</li>
+<li>Ferritin</li>
+<li>Vitamin B12</li>
+<li>Folate</li>
+</ul>
+
+<h3>Rule sources incorporated</h3>
+
+<ul>
+<li>Supplied Excel diagnostic rule table</li>
+<li>Supplied blood-film morphology SOP</li>
+<li>Sex-specific haemoglobin/RBC thresholds where provided</li>
+<li>Suggested follow-up investigations</li>
+<li>Educational escalation warnings</li>
+</ul>
+
+<div class="warning">
+<strong>Educational use only.</strong><br>
+The application must not be used as an autonomous diagnostic system or
+as a replacement for qualified clinical assessment.
+</div>
+
+</div>
+
+</section>
+
+</div>
+
+<footer>
+Blood Test AI — Educational Clinical Reasoning System
+</footer>
+
+
+<script>
+
+let lastData = {};
+let lastResults = [];
+
+
+/* =========================
+   NAVIGATION
+========================= */
+
+function showPage(pageId) {
+
+    document.querySelectorAll(".page").forEach(page => {
+        page.classList.remove("active");
+    });
+
+    const page = document.getElementById(pageId);
+
+    if (page) {
+        page.classList.add("active");
+    }
+
+    window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+    });
+}
+
+
+/* =========================
+   HELPERS
+========================= */
+
+function num(id) {
+
+    const element = document.getElementById(id);
+
+    if (!element) {
+        return null;
+    }
+
+    const value = parseFloat(element.value);
+
+    return Number.isFinite(value) ? value : null;
+}
+
+
+function text(id) {
+
+    const element = document.getElementById(id);
+
+    return element ? element.value.trim() : "";
+}
+
+
+function valid(value) {
+
+    return value !== null &&
+           value !== undefined &&
+           Number.isFinite(value);
+}
+
+
+function escapeHtml(value) {
+
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+
+function addResult(condition, severity, explanation, suggestion, suggestion2) {
+
+    lastResults.push({
+        condition,
+        severity,
+        explanation,
+        suggestion,
+        suggestion2
+    });
+}
+
+
+/* =========================
+   COLLECT DATA
+========================= */
+
+function collectData() {
+
+    return {
+
+        patient_name: text("patient_name"),
+        patient_id: text("patient_id"),
+        age: num("age"),
+        gender: text("gender"),
+
+        wbc: num("wbc"),
+        rbc: num("rbc"),
+        hb: num("hb"),
+        hct: num("hct"),
+        mcv: num("mcv"),
+        mch: num("mch"),
+        mchc: num("mchc"),
+        rdw: num("rdw"),
+        plt: num("plt"),
+        mpv: num("mpv"),
+
+        lymph_pct: num("lymph_pct"),
+        lymph_abs: num("lymph_abs"),
+
+        mono_pct: num("mono_pct"),
+        mono_abs: num("mono_abs"),
+
+        neut_pct: num("neut_pct"),
+        neut_abs: num("neut_abs"),
+
+        eos_pct: num("eos_pct"),
+        eos_abs: num("eos_abs"),
+
+        baso_pct: num("baso_pct"),
+        baso_abs: num("baso_abs"),
+
+        iron: num("iron"),
+        tibc: num("tibc"),
+        urea: num("urea"),
+        creatinine: num("creatinine"),
+        calcium: num("calcium"),
+        uric_acid: num("uric_acid"),
+        bilirubin: num("bilirubin"),
+        alp: num("alp"),
+        albumin: num("albumin"),
+        crp: num("crp"),
+        ldh: num("ldh"),
+        esr: num("esr"),
+        ferritin: num("ferritin"),
+        folate: num("folate"),
+        b12: num("b12"),
+
+        clinical_details: text("clinical_details")
+    };
+}
+
+
+/* =========================
+   ANALYSIS
+========================= */
+
+function runAnalysis() {
+
+    lastData = collectData();
+
+    lastResults = [];
+
+    const d = lastData;
+
+    if (!d.gender) {
+
+        alert("Please select patient gender.");
+
+        return;
+    }
+
+
+    /* =========================
+       IRON DEFICIENCY ANAEMIA
+    ========================= */
+
+    const idaMale =
+        d.gender === "M" &&
+        valid(d.rbc) &&
+        valid(d.hb) &&
+        valid(d.mcv) &&
+        valid(d.ferritin) &&
+        d.rbc < 4.5 &&
+        d.hb < 13 &&
+        d.mcv < 80 &&
+        d.ferritin < 30;
+
+    const idaFemale =
+        d.gender === "F" &&
+        valid(d.rbc) &&
+        valid(d.hb) &&
+        valid(d.mcv) &&
+        valid(d.ferritin) &&
+        d.rbc < 4.5 &&
+        d.hb < 12 &&
+        d.mcv < 80 &&
+        d.ferritin < 30;
+
+    if (idaMale || idaFemale) {
+
+        addResult(
+            "Iron Deficiency Anaemia",
+            "High",
+            "Low haemoglobin/RBC with microcytosis and ferritin below the supplied threshold.",
+            "Blood morphology to support assessment of iron deficiency.",
+            "Consider further investigation if there is no improvement with appropriate iron replacement."
+        );
+    }
+
+
+    /* =========================
+       B12 / FOLATE
+    ========================= */
+
+    const b12Def =
+        valid(d.b12) && d.b12 < 200;
+
+    const folateDef =
+        valid(d.folate) && d.folate < 3;
+
+    if (
+        valid(d.rbc) &&
+        valid(d.hb) &&
+        d.rbc < 4.5 &&
+        (
+            b12Def ||
+            folateDef
+        )
+    ) {
+
+        const hbThreshold =
+            d.gender === "M" ? 13 : 12;
+
+        if (d.hb < hbThreshold) {
+
+            addResult(
+                "Vitamin B12/Folate Deficiency Anaemia",
+                "High",
+                "Anaemia with B12 and/or folate below the supplied rule threshold.",
+                "Consider serum methylmalonic acid (MMA) testing where appropriate for B12 assessment.",
+                "Blood morphology may provide additional supportive information."
+            );
+        }
+    }
+
+
+    /* =========================
+       MICROCYTIC ANAEMIA
+    ========================= */
+
+    if (
+        valid(d.rbc) &&
+        valid(d.mcv) &&
+        d.rbc < 4.5 &&
+        d.mcv < 80
+    ) {
+
+        addResult(
+            "Microcytic Anaemia",
+            "Moderate",
+            "RBC below the supplied threshold with MCV below 80 fL.",
+            "Consider serum iron, TIBC, ferritin and blood morphology.",
+            "Further investigation may be appropriate if the cause remains unexplained."
+        );
+    }
+
+
+    /* =========================
+       MACROCYTIC ANAEMIA
+    ========================= */
+
+    if (
+        valid(d.rbc) &&
+        valid(d.mcv) &&
+        d.rbc < 4.5 &&
+        d.mcv > 100
+    ) {
+
+        addResult(
+            "Macrocytic Anaemia",
+            "Moderate",
+            "RBC below the supplied threshold with MCV above 100 fL.",
+            "Consider B12, folate, MMA, homocysteine and blood-film assessment.",
+            "Review medication, liver disease and other causes where clinically appropriate."
+        );
+    }
+
+
+    /* =========================
+       ANAEMIA OF CHRONIC DISEASE
+    ========================= */
+
+    const chronicMale =
+        d.gender === "M" &&
+        valid(d.rbc) &&
+        valid(d.hb) &&
+        valid(d.mcv) &&
+        valid(d.iron) &&
+        d.rbc < 4.5 &&
+        d.hb < 13 &&
+        d.mcv >= 80 &&
+        d.mcv <= 100 &&
+        d.iron >= 30;
+
+    const chronicFemale =
+        d.gender === "F" &&
+        valid(d.rbc) &&
+        valid(d.hb) &&
+        valid(d.mcv) &&
+        valid(d.iron) &&
+        d.rbc < 4 &&
+        d.hb < 12 &&
+        d.mcv >= 80 &&
+        d.mcv <= 100 &&
+        d.iron >= 30;
+
+    if (chronicMale || chronicFemale) {
+
+        addResult(
+            "Anaemia of Chronic Disease",
+            "Moderate",
+            "Normocytic anaemia with iron at or above the supplied threshold.",
+            "Consider reticulocyte count and blood morphology.",
+            "Erythropoietin assessment or marrow investigation may be considered where clinically indicated."
+        );
+    }
+
+
+    /* =========================
+       ACUTE INFECTION
+    ========================= */
+
+    const hbLow =
+        d.gender === "M"
+            ? d.hb < 13
+            : d.hb < 12;
+
+    if (
+        valid(d.wbc) &&
+        valid(d.rbc) &&
+        valid(d.hb) &&
+        valid(d.crp) &&
+        d.wbc > 11 &&
+        d.rbc < 4.5 &&
+        hbLow &&
+        d.crp > 5
+    ) {
+
+        addResult(
+            "Acute Infection / Inflammation Pattern",
+            "Moderate",
+            "Raised WBC and CRP with anaemia according to the supplied rule.",
+            "Clinical assessment and appropriate cultures/pathogen testing may be considered.",
+            ""
+        );
+    }
+
+
+    /* =========================
+       CHRONIC INFECTION
+    ========================= */
+
+    if (
+        valid(d.wbc) &&
+        valid(d.lymph_pct) &&
+        valid(d.esr) &&
+        d.wbc > 11 &&
+        d.lymph_pct > 20 &&
+        d.esr > 20
+    ) {
+
+        addResult(
+            "Chronic Infection / Inflammatory Pattern",
+            "Moderate",
+            "Raised WBC, lymphocyte proportion and ESR meet the supplied rule pattern.",
+            "Consider targeted pathogen testing based on clinical context.",
+            ""
+        );
+    }
+
+
+    /* =========================
+       EOSINOPHILIA
+    ========================= */
+
+    if (
+        valid(d.eos_abs) &&
+        d.eos_abs > 0.5
+    ) {
+
+        addResult(
+            "Eosinophilia",
+            "Moderate",
+            "Absolute eosinophil count is above the typical adult upper reference limit used here.",
+            "Review allergic, drug-related, parasitic and other clinical causes.",
+            "Persistent unexplained eosinophilia warrants professional assessment."
+        );
+    }
+
+
+    /* =========================
+       THROMBOCYTOPENIA
+    ========================= */
+
+    if (
+        valid(d.plt) &&
+        d.plt < 150
+    ) {
+
+        let severity = "Moderate";
+
+        if (d.plt < 50) {
+            severity = "High";
+        }
+
+        if (d.plt < 20) {
+            severity = "Critical";
+        }
+
+        addResult(
+            "Thrombocytopenia",
+            severity,
+            "Platelet count is below 150 ×10⁹/L.",
+            "Consider coagulation assessment and blood-film review.",
+            "Unexpected low results should be checked for platelet clumping and clinical context."
+        );
+    }
+
+
+    /* =========================
+       THROMBOCYTOSIS
+    ========================= */
+
+    if (
+        valid(d.plt) &&
+        d.plt > 450
+    ) {
+
+        addResult(
+            "Thrombocytosis",
+            d.plt > 1000 ? "High" : "Moderate",
+            "Platelet count is above 450 ×10⁹/L.",
+            "Consider reactive causes including infection, inflammation and iron deficiency.",
+            "Persistent unexplained thrombocytosis may warrant haematology assessment."
+        );
+    }
+
+
+    /* =========================
+       DEHYDRATION
+    ========================= */
+
+    const dehydrationMale =
+        d.gender === "M" &&
+        valid(d.hct) &&
+        valid(d.urea) &&
+        valid(d.creatinine) &&
+        d.hct > 0.52 &&
+        d.urea > 20 &&
+        d.creatinine > 110;
+
+    const dehydrationFemale =
+        d.gender === "F" &&
+        valid(d.hct) &&
+        valid(d.urea) &&
+        valid(d.creatinine) &&
+        d.hct > 0.47 &&
+        d.urea > 20 &&
+        d.creatinine > 97;
+
+    if (dehydrationMale || dehydrationFemale) {
+
+        addResult(
+            "Possible Dehydration Pattern",
+            "Moderate",
+            "Raised haematocrit, urea and creatinine meet the supplied dehydration rule.",
+            "Consider serum electrolytes and clinical hydration assessment.",
+            "Urinalysis and osmolality may be useful depending on clinical circumstances."
+        );
+    }
+
+
+    /* =========================
+       LEUKEMIA SCREENING RULE
+    ========================= */
+
+    if (
+        valid(d.wbc) &&
+        valid(d.rbc) &&
+        valid(d.hb) &&
+        valid(d.ldh) &&
+        d.wbc > 11 &&
+        d.rbc < 4.5 &&
+        hbLow &&
+        d.ldh > 300
+    ) {
+
+        addResult(
+            "Leukaemia Pattern — Requires Further Investigation",
+            "High",
+            "The supplied Excel screening rule is positive.",
+            "Blood morphology, immunophenotyping and appropriate molecular/cytogenetic investigation may be required.",
+            "Bone marrow examination may be considered by the treating clinical team."
+        );
+    }
+
+
+    /* =========================
+       MULTIPLE MYELOMA PATTERN
+    ========================= */
+
+    if (
+        valid(d.rbc) &&
+        valid(d.wbc) &&
+        valid(d.plt) &&
+        valid(d.calcium) &&
+        valid(d.ldh) &&
+        valid(d.esr) &&
+        d.rbc < 4.5 &&
+        d.wbc < 4 &&
+        d.plt < 150 &&
+        d.calcium > 2.5 &&
+        d.ldh > 300 &&
+        d.esr > 20
+    ) {
+
+        addResult(
+            "Multiple Myeloma Pattern — Requires Further Investigation",
+            "High",
+            "The supplied rule combines anaemia/cytopenia with hypercalcaemia, raised LDH and ESR.",
+            "Serum protein electrophoresis and other myeloma investigations may be considered.",
+            "Bone marrow examination may be required for confirmation."
+        );
+    }
+
+
+    /* =========================
+       NUTRITIONAL ANAEMIA
+    ========================= */
+
+    if (
+        valid(d.rbc) &&
+        valid(d.wbc) &&
+        valid(d.plt) &&
+        valid(d.iron) &&
+        valid(d.hb) &&
+        d.wbc < 10 &&
+        d.plt < 150 &&
+        d.iron < 60 &&
+        d.rbc < 4.5 &&
+        d.hb < (d.gender === "M" ? 13 : 12)
+    ) {
+
+        addResult(
+            "Nutritional Anaemia Pattern",
+            "Moderate",
+            "Anaemia with low iron and reduced platelet count meets the supplied screening rule.",
+            "Consider dietary assessment and appropriate nutritional investigations.",
+            ""
+        );
+    }
+
+
+    /* =========================
+       HAEMOLYTIC ANAEMIA
+    ========================= */
+
+    if (
+        valid(d.rbc) &&
+        valid(d.plt) &&
+        valid(d.bilirubin) &&
+        d.rbc < 4.5 &&
+        d.plt <= 150 &&
+        d.bilirubin > 21
+    ) {
+
+        addResult(
+            "Possible Haemolytic Anaemia",
+            "High",
+            "Anaemia with thrombocytopenia and raised bilirubin may fit the supplied haemolysis pattern.",
+            "Consider reticulocyte count and direct antiglobulin testing (DAT).",
+            "Blood-film review and clinical assessment are important."
+        );
+    }
+
+
+    /* =========================
+       APLASTIC ANAEMIA SCREEN
+    ========================= */
+
+    if (
+        valid(d.rbc) &&
+        valid(d.wbc) &&
+        valid(d.plt) &&
+        valid(d.ferritin) &&
+        d.rbc < 4.5 &&
+        d.wbc < 4 &&
+        d.plt < 150 &&
+        d.ferritin >= 300
+    ) {
+
+        addResult(
+            "Aplastic Anaemia Pattern — Requires Further Investigation",
+            "High",
+            "The supplied screening rule is positive.",
+            "Reticulocyte assessment may be appropriate.",
+            "Bone marrow assessment requires specialist clinical consideration."
+        );
+    }
+
+
+    /* =========================
+       NEUTROPENIA
+    ========================= */
+
+    if (
+        valid(d.neut_abs) &&
+        d.neut_abs < 1.5
+    ) {
+
+        let severity = "Moderate";
+
+        if (d.neut_abs < 1.0) {
+            severity = "High";
+        }
+
+        if (d.neut_abs < 0.5) {
+            severity = "Critical";
+        }
+
+        addResult(
+            "Neutropenia",
+            severity,
+            "Absolute neutrophil count is below 1.5 ×10⁹/L.",
+            "Review medication, infection, clinical history and previous results.",
+            d.neut_abs < 1.0
+                ? "Prompt clinical assessment is appropriate, particularly if fever or infection is present."
+                : ""
+        );
+    }
+
+
+    /* =========================
+       NEUTROPHILIA
+    ========================= */
+
+    if (
+        valid(d.neut_abs) &&
+        d.neut_abs > 7.5
+    ) {
+
+        addResult(
+            "Neutrophilia",
+            "Moderate",
+            "Absolute neutrophil count is above the typical adult reference range.",
+            "Consider infection, inflammation, medication effects and clinical context.",
+            ""
+        );
+    }
+
+
+    /* =========================
+       LYMPHOCYTOSIS
+    ========================= */
+
+    if (
+        valid(d.lymph_abs) &&
+        d.lymph_abs > 4.0
+    ) {
+
+        addResult(
+            "Lymphocytosis",
+            "Moderate",
+            "Absolute lymphocyte count is above the typical adult reference range.",
+            "Consider reactive infection and persistent lymphoproliferative causes.",
+            "Blood-film review may be useful when clinically indicated."
+        );
+    }
+
+
+    /* =========================
+       MONOCYTOSIS
+    ========================= */
+
+    if (
+        valid(d.mono_abs) &&
+        d.mono_abs > 0.8
+    ) {
+
+        addResult(
+            "Monocytosis",
+            "Moderate",
+            "Absolute monocyte count is above the typical adult reference range.",
+            "Consider infection/inflammation and review persistence over time.",
+            "Persistent unexplained monocytosis warrants clinical assessment."
+        );
+    }
+
+
+    /* =========================
+       BASOPHILIA
+    ========================= */
+
+    if (
+        valid(d.baso_abs) &&
+        d.baso_abs > 0.1
+    ) {
+
+        addResult(
+            "Basophilia",
+            "Moderate",
+            "Absolute basophil count is above the typical adult reference range.",
+            "Manual differential/blood-film confirmation may be appropriate.",
+            "Persistent marked basophilia requires professional evaluation."
+        );
+    }
+
+
+    /* =========================
+       HIGH HAEMOGLOBIN
+    ========================= */
+
+    const highHbMale =
+        d.gender === "M" &&
+        valid(d.hb) &&
+        d.hb > 18;
+
+    const highHbFemale =
+        d.gender === "F" &&
+        valid(d.hb) &&
+        d.hb > 16.5;
+
+    if (highHbMale || highHbFemale) {
+
+        addResult(
+            "Polycythaemia / Raised Haemoglobin",
+            "High",
+            "Haemoglobin exceeds the threshold supplied in the morphology SOP.",
+            "Review hydration, smoking, respiratory disease, medications and other secondary causes.",
+            "Persistent unexplained elevation may require specialist assessment."
+        );
+    }
+
+
+    /* =========================
+       HIGH RDW / POSSIBLE HAEMOLYSIS
+    ========================= */
+
+    if (
+        valid(d.rdw) &&
+        d.rdw > 20 &&
+        valid(d.bilirubin) &&
+        d.bilirubin > 21
+    ) {
+
+        addResult(
+            "Possible Haemolysis / Increased Red-Cell Variation",
+            "High",
+            "Marked RDW elevation together with raised bilirubin may support further haemolysis assessment.",
+            "Consider reticulocyte count, DAT and blood-film review.",
+            ""
+        );
+    }
+
+
+    /* =========================
+       LIVER-RELATED PATTERN
+    ========================= */
+
+    if (
+        valid(d.mcv) &&
+        d.mcv > 100 &&
+        valid(d.albumin) &&
+        d.albumin < 35
+    ) {
+
+        addResult(
+            "Possible Liver-Related Macrocytic Pattern",
+            "Moderate",
+            "Macrocytosis with low albumin may warrant consideration of liver disease among other causes.",
+            "Review LFTs, clinical history, medication and alcohol history where appropriate.",
+            ""
+        );
+    }
+
+
+    /* =========================
+       IRON DEFICIENCY MORPHOLOGY
+    ========================= */
+
+    const morphology =
+        d.clinical_details.toLowerCase();
+
+    if (
+        morphology.includes("microcyt") ||
+        morphology.includes("hypochrom") ||
+        morphology.includes("pencil cell")
+    ) {
+
+        addResult(
+            "Microcytic / Hypochromic Blood-Film Pattern",
+            "Moderate",
+            "The supplied clinical/morphology information contains features associated with microcytosis or hypochromia.",
+            "Consider ferritin and iron studies.",
+            "Blood-film findings should be interpreted alongside CBC and clinical information."
+        );
+    }
+
+
+    /* =========================
+       SCHISTOCYTES
+    ========================= */
+
+    if (
+        morphology.includes("schistocyte") ||
+        morphology.includes("fragment")
+    ) {
+
+        addResult(
+            "Red-Cell Fragmentation",
+            "High",
+            "Schistocytes/fragments are reported in the supplied morphology information.",
+            "Prompt professional review is appropriate; correlate with platelet count, renal function and clinical status.",
+            "The morphology may occur in several conditions and is not diagnostic by itself."
+        );
+    }
+
+
+    /* =========================
+       BLASTS
+    ========================= */
+
+    if (
+        morphology.includes("blast") ||
+        morphology.includes("auer rod")
+    ) {
+
+        addResult(
+            "Blasts Reported",
+            "Critical",
+            "Blast cells or Auer rods are mentioned in the supplied morphology information.",
+            "Urgent professional/haematology assessment is required.",
+            "Manual differential and appropriate confirmatory investigations may be required."
+        );
+    }
+
+
+    /* =========================
+       MALARIA
+    ========================= */
+
+    if (
+        morphology.includes("malaria") ||
+        morphology.includes("plasmodium")
+    ) {
+
+        addResult(
+            "Possible / Reported Malaria",
+            "Critical",
+            "The clinical or morphology information mentions malaria/Plasmodium.",
+            "Urgent professional assessment and appropriate parasitological testing are required.",
+            "Positive malaria findings require urgent clinical management."
+        );
+    }
+
+
+    /* =========================
+       TTP / HUS TYPE FLAG
+    ========================= */
+
+    if (
+        morphology.includes("schistocyte") &&
+        valid(d.plt) &&
+        d.plt < 100 &&
+        valid(d.creatinine) &&
+        d.creatinine > 110
+    ) {
+
+        addResult(
+            "Thrombocytopenia + Fragmentation + Renal Abnormality",
+            "Critical",
+            "The supplied data contain thrombocytopenia, red-cell fragmentation and raised creatinine.",
+            "Urgent professional assessment is required to exclude serious microangiopathic processes.",
+            ""
+        );
+    }
+
+
+    /* =========================
+       FINAL OUTPUT
+    ========================= */
+
+    renderResults();
+
+    showPage("results");
+}
+
+
+/* =========================
+   RENDER RESULTS
+========================= */
+
+function renderResults() {
+
+    const d = lastData;
+
+    const summary =
+        document.getElementById("resultSummary");
+
+    const labResults =
+        document.getElementById("labResults");
+
+    const diagnosisResults =
+        document.getElementById("diagnosisResults");
+
+    const safetyResults =
+        document.getElementById("safetyResults");
+
+
+    const criticalCount =
+        lastResults.filter(r => r.severity === "Critical").length;
+
+    const highCount =
+        lastResults.filter(r => r.severity === "High").length;
+
+
+    summary.innerHTML = `
+
+        <div class="${
+            criticalCount > 0
+                ? "danger"
+                : highCount > 0
+                    ? "warning"
+                    : "success"
+        }">
+
+        <strong>
+        Analysis completed.
+        </strong>
+
+        <br><br>
+
+        Findings identified:
+        <strong>${lastResults.length}</strong>
+
+        <br>
+
+        High-priority findings:
+        <strong>${highCount}</strong>
+
+        <br>
+
+        Critical flags:
+        <strong>${criticalCount}</strong>
+
+        </div>
+
+        <div class="info">
+
+        This is a rule-based educational screening result.
+        It does not establish a diagnosis.
+
+        </div>
+    `;
+
+
+    /* LAB TABLE */
+
+    const parameters = [
+
+        ["WBC", d.wbc, "×10⁹/L"],
+        ["RBC", d.rbc, "×10¹²/L"],
+        ["Haemoglobin", d.hb, "g/dL"],
+        ["Haematocrit", d.hct, "L/L"],
+        ["MCV", d.mcv, "fL"],
+        ["MCH", d.mch, "pg"],
+        ["MCHC", d.mchc, "g/dL"],
+        ["RDW-CV", d.rdw, "%"],
+        ["Platelet", d.plt, "×10⁹/L"],
+        ["MPV", d.mpv, "fL"],
+        ["Lymphocyte %", d.lymph_pct, "%"],
+        ["Lymphocyte Absolute", d.lymph_abs, "×10⁹/L"],
+        ["Monocyte %", d.mono_pct, "%"],
+        ["Monocyte Absolute", d.mono_abs, "×10⁹/L"],
+        ["Neutrophil %", d.neut_pct, "%"],
+        ["Neutrophil Absolute", d.neut_abs, "×10⁹/L"],
+        ["Eosinophil %", d.eos_pct, "%"],
+        ["Eosinophil Absolute", d.eos_abs, "×10⁹/L"],
+        ["Basophil %", d.baso_pct, "%"],
+        ["Basophil Absolute", d.baso_abs, "×10⁹/L"],
+        ["Iron", d.iron, "µmol/L"],
+        ["TIBC", d.tibc, "µmol/L"],
+        ["Urea", d.urea, "mmol/L"],
+        ["Creatinine", d.creatinine, "µmol/L"],
+        ["Calcium", d.calcium, "mmol/L"],
+        ["Uric Acid", d.uric_acid, "µmol/L"],
+        ["Bilirubin", d.bilirubin, "µmol/L"],
+        ["ALP", d.alp, "U/L"],
+        ["Albumin", d.albumin, "g/L"],
+        ["CRP", d.crp, "mg/L"],
+        ["LDH", d.ldh, "U/L"],
+        ["ESR", d.esr, "mm/hr"],
+        ["Ferritin", d.ferritin, "µg/L"],
+        ["Folate", d.folate, "µg/L or nmol/L"],
+        ["Vitamin B12", d.b12, "ng/L"]
+    ];
+
+
+    let table = `
+
+    <table>
+
+    <thead>
+    <tr>
+        <th>Parameter</th>
+        <th>Result</th>
+        <th>Unit</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    `;
+
+
+    parameters.forEach(p => {
+
+        if (valid(p[1])) {
+
+            table += `
+            <tr>
+                <td>${escapeHtml(p[0])}</td>
+                <td>${escapeHtml(p[1])}</td>
+                <td>${escapeHtml(p[2])}</td>
+            </tr>
+            `;
+        }
+
+    });
+
+
+    table += `
+    </tbody>
+    </table>
+    `;
+
+
+    labResults.innerHTML = table;
+
+
+    /* DIAGNOSIS */
+
+    if (lastResults.length === 0) {
+
+        diagnosisResults.innerHTML = `
+
+        <div class="success">
+
+        No supplied rule was triggered by the entered values.
+
+        <br><br>
+
+        This does not mean that the results are clinically normal.
+        Professional interpretation and local reference ranges remain
+        necessary.
+
+        </div>
+
+        `;
+
+    } else {
+
+        diagnosisResults.innerHTML =
+            lastResults.map(result => {
+
+                const className =
+                    result.severity === "Critical"
+                        ? "danger"
+                        : result.severity === "High"
+                            ? "warning"
+                            : "info";
+
+                return `
+
+                <div class="card result-card ${className}">
+
+                    <h3>
+                        ${escapeHtml(result.condition)}
+                    </h3>
+
+                    <p>
+                        <span class="badge">
+                            ${escapeHtml(result.severity)}
+                        </span>
+                    </p>
+
+                    <p>
+                        <strong>Reasoning:</strong><br>
+                        ${escapeHtml(result.explanation)}
+                    </p>
+
+                    ${
+                        result.suggestion
+                        ? `
+                        <p>
+                            <strong>Suggestion:</strong><br>
+                            ${escapeHtml(result.suggestion)}
+                        </p>
+                        `
+                        : ""
+                    }
+
+                    ${
+                        result.suggestion2
+                        ? `
+                        <p>
+                            <strong>Additional consideration:</strong><br>
+                            ${escapeHtml(result.suggestion2)}
+                        </p>
+                        `
+                        : ""
+                    }
+
+                </div>
+
+                `;
+
+            }).join("");
+    }
+
+
+    /* SAFETY */
+
+    const safety = [];
+
+    if (d.plt !== null && d.plt < 50) {
+        safety.push(
+            "Platelets are below 50 ×10⁹/L."
+        );
+    }
+
+    if (d.neut_abs !== null && d.neut_abs < 1.0) {
+        safety.push(
+            "Absolute neutrophil count is below 1.0 ×10⁹/L."
+        );
+    }
+
+    if (d.neut_abs !== null && d.neut_abs < 0.5) {
+        safety.push(
+            "Absolute neutrophil count is below 0.5 ×10⁹/L."
+        );
+    }
+
+    if (
+        d.hb !== null &&
+        (
+            (d.gender === "M" && d.hb < 6) ||
+            (d.gender === "F" && d.hb < 6)
+        )
+    ) {
+        safety.push(
+            "Haemoglobin is below 6 g/dL."
+        );
+    }
+
+    if (
+        morphologyContains("blast") ||
+        morphologyContains("malaria") ||
+        morphologyContains("auer rod")
+    ) {
+        safety.push(
+            "Potential urgent blood-film finding reported in clinical/morphology information."
+        );
+    }
+
+    if (safety.length === 0) {
+
+        safetyResults.innerHTML = `
+            <div class="success">
+                No automatic critical safety flag was generated from
+                the supplied values.
+            </div>
+        `;
+
+    } else {
+
+        safetyResults.innerHTML = `
+
+            <div class="danger">
+
+            <strong>
+            Urgent professional review may be required.
+            </strong>
+
+            <ul>
+
+            ${safety.map(x =>
+                `<li>${escapeHtml(x)}</li>`
+            ).join("")}
+
+            </ul>
+
+            </div>
+        `;
+    }
+}
+
+
+function morphologyContains(word) {
+
+    return lastData.clinical_details
+        .toLowerCase()
+        .includes(word.toLowerCase());
+}
+
+
+/* =========================
+   CLEAR
+========================= */
+
+function clearForm() {
+
+    document.querySelectorAll(
+        "#input input, #input textarea"
+    ).forEach(element => {
+
+        element.value = "";
+
+    });
+
+    document.getElementById("gender").value = "";
+
+    lastData = {};
+    lastResults = [];
+
+    document.getElementById("resultSummary").innerHTML =
+        "No analysis has been performed yet.";
+
+    document.getElementById("labResults").innerHTML = "";
+
+    document.getElementById("diagnosisResults").innerHTML = "";
+
+    document.getElementById("safetyResults").innerHTML = "";
+}
+
+
+/* =========================
+   JSON EXPORT
+========================= */
+
+function downloadJSON() {
+
+    if (!lastData || Object.keys(lastData).length === 0) {
+
+        alert("Run an analysis first.");
+
+        return;
+    }
+
+
+    const exportData = {
+
+        application:
+            "Blood Test AI",
+
+        purpose:
+            "Educational clinical reasoning",
+
+        disclaimer:
+            "Not a substitute for professional medical advice, diagnosis or treatment.",
+
+        generated_at:
+            new Date().toISOString(),
+
+        patient:
+            lastData,
+
+        findings:
+            lastResults
+    };
+
+
+    const blob = new Blob(
+        [
+            JSON.stringify(
+                exportData,
+                null,
+                2
+            )
+        ],
+        {
+            type: "application/json"
+        }
+    );
+
+
+    const url =
+        URL.createObjectURL(blob);
+
+    const link =
+        document.createElement("a");
+
+    link.href = url;
+
+    link.download =
+        `blood-test-analysis-${Date.now()}.json`;
+
+    document.body.appendChild(link);
+
+    link.click();
+
+    document.body.removeChild(link);
+
+    URL.revokeObjectURL(url);
+}
+
+</script>
+
+</body>
+</html>
